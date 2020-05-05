@@ -11,8 +11,6 @@ typedef unsigned long long uint64_t;
 typedef unsigned __int128 uint128_t;
 #endif
 
-static const int verbose=0;
-
 #define uint128_t __uint128_t
 
 /*
@@ -73,6 +71,7 @@ Warning: LIMB_BITS corresponds to the uint*_t type, and multiplication requires 
 // add two numbers using two's complement for overflow, returning an overflow bit
 // algorithm 14.7, Handbook of Applied Cryptography, http://cacr.uwaterloo.ca/hac/about/chap14.pdf
 //   except we ignore the final carry in step 3 since we assume that there is no extra limb
+__attribute__((optimize("unroll-loops")))
 static UINT FUNCNAME(add)(UINT* const out, const UINT* const x, const UINT* const y){
   UINT c=0;
   #pragma unroll
@@ -88,6 +87,7 @@ static UINT FUNCNAME(add)(UINT* const out, const UINT* const x, const UINT* cons
 // algorithm 14.9, Handbook of Applied Cryptography, http://cacr.uwaterloo.ca/hac/about/chap14.pdf
 // the book says it computes x-y for x>=y, but actually it computes the 2's complement for x<y
 // note: algorithm 14.9 allow adding c=-1, but we just subtract c=1 instead
+__attribute__((optimize("unroll-loops")))
 static UINT FUNCNAME(subtract)(UINT* const out, const UINT* const x, const UINT* const y){
   UINT c=0;
   #pragma unroll
@@ -113,6 +113,7 @@ static uint8_t FUNCNAME(less_than)(const UINT* const x, const UINT* const y){
 }
 
 // checks whether x<=y
+__attribute__((optimize("unroll-loops")))
 static uint8_t FUNCNAME(less_than_or_equal)(const UINT* const x, const UINT* const y){
   for (int i=NUM_LIMBS-1;i>=0;i--){
     if (x[i]>y[i])
@@ -125,14 +126,68 @@ static uint8_t FUNCNAME(less_than_or_equal)(const UINT* const x, const UINT* con
 }
 
 
+// computes quotient x/y and remainder x%y
 // algorithm 14.20, Handbook of Applied Cryptography, http://cacr.uwaterloo.ca/hac/about/chap14.pdf
-// but assume they both have the same number of limbs
-// this implementation is naive
+// it works, but the implementation is naive, see notes
 static void FUNCNAME(div)(UINT* const outq, UINT* const outr, const UINT* const x, const UINT* const y){
-  UINT q[NUM_LIMBS];
+
+  /*
+  // book has n and t, we compute these
+  int n = 0;  // idx of first significant("nonzero") limbs of x
+  int t = 0;  // n minus the idx of first significant limb of y
+  for (int i=NUM_LIMBS-1;i>=0;i--){
+    if (x[i] != 0){
+      n=i+1;
+      break;
+    }
+  }
+  for (int i=n;i>=0;i--){
+    if (y[i] != 0){
+      t = n-i;
+    }
+  }
+
+  // step 1 in book
+  for (int j=0;j<n-t;j++)
+    outq[j]=0;
+
+  // step 2 in book
+  // TODO 
+  */
+
+
+  // not in the textbook
+  // special case for y==1, this hack is needed for now
+  int x_num_significant_limbs = 0;
+  int y_num_significant_limbs = 0;
+  for (int i=5;i>=0;i--){
+    if (x[i] != 0){
+      x_num_significant_limbs=i+1;
+      break;
+    }
+  }
+  for (int i=5;i>=0;i--){
+    if (y[i] != 0){
+      y_num_significant_limbs=i+1;
+      break;
+    }
+  }
+  if(y_num_significant_limbs == 1 && y[0] == 1){
+    for (int i=0;i<6;i++){
+      outr[i]=0;
+      outq[i]=x[i];
+    }
+    //printf("bignum_int_div() returning special case\n");
+    return;
+  }
+
+
+  // THIS IS A NAIVE IMPLEMENTATION OF WHAT IS IN THE BOOK
+  // NAIVIELY ASSUMING THAT ALL LIMBS SIGNIFICANT AND OMITTING OPTIMIZATIONS
+  // init stuff
   UINT one[NUM_LIMBS];
   UINT x_[NUM_LIMBS];
-  // init stuff
+  UINT q[NUM_LIMBS];
   for (int i=0; i<NUM_LIMBS; i++){
     q[i]=0;
     one[i]=0;
@@ -225,7 +280,6 @@ static void FUNCNAME(square)(UINT* const out, const UINT* const x){
 // compute a+b (mod m), where x,y < m
 // algorithm 14.27, Handbook of Applied Cryptography, http://cacr.uwaterloo.ca/hac/about/chap14.pdf
 static void FUNCNAME(addmod)(UINT* const out, const UINT* const x, const UINT* const y, const UINT* const m){
-  if(verbose) printf("addmod()\n");
   UINT carry = FUNCNAME(add)(out,x,y);
   // In textbook 14.27, says addmod is add and an extra step: subtract m iff x+y>=m
   if (carry || FUNCNAME(less_than_or_equal)(m,out)){
@@ -238,7 +292,6 @@ static void FUNCNAME(addmod)(UINT* const out, const UINT* const x, const UINT* c
 // uses fact 14.27, Handbook of Applied Cryptography, http://cacr.uwaterloo.ca/hac/about/chap14.pdf
 static void FUNCNAME(subtractmod)(UINT* const out, const UINT* const x, const UINT* const y, const UINT* const m){
   UINT c = FUNCNAME(subtract)(out,x,y);
-  if(verbose) printf("subtractmod()\n");
   // if c, then x<y, so result is negative, need to get it's magnitude and subtract it from m 
   if (c){
     UINT zero[NUM_LIMBS];
@@ -254,7 +307,7 @@ static void FUNCNAME(subtractmod)(UINT* const out, const UINT* const x, const UI
 // returns (aR * bR) % m, where aR and bR are in Montgomery form
 // algorithm 14.32, Handbook of Applied Cryptography, http://cacr.uwaterloo.ca/hac/about/chap14.pdf
 // T has 2*NUM_LIMBS limbs, otherwise pad most significant bits with zeros
-static void FUNCNAME(montreduce)(UINT* const out, UINT* const T, const UINT* const m, const UINT inv){
+static void FUNCNAME(montreduce)(UINT* const out, const UINT* const T, const UINT* const m, const UINT inv){
 
   UINT A[NUM_LIMBS*2+1];
   for (int i=0; i<2*NUM_LIMBS; i++)
@@ -307,8 +360,8 @@ static void FUNCNAME(montmul_noninterleaved)(UINT* const out, const UINT* const 
 }
 
 // algorithm 14.36, Handbook of Applied Cryptography, http://cacr.uwaterloo.ca/hac/about/chap14.pdf
+__attribute__((optimize("unroll-loops")))
 static void FUNCNAME(montmul)(UINT* const out, const UINT* const x, const UINT* const y, const UINT* const m, const UINT inv){
-  if(verbose) printf("montmul()\n");
   UINT A[NUM_LIMBS*2+1];
   for (int i=0;i<NUM_LIMBS*2+1;i++)
     A[i]=0;
@@ -357,4 +410,4 @@ static void FUNCNAME(montmul_3args_)(UINT* const out, const UINT* const x, const
   FUNCNAME(montmul)(out, x, y, m, inv);
 }
 
-#endif /* BIGINT_H */
+#endif

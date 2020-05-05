@@ -2322,72 +2322,71 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
         fidx = frame_lp[GET_OFFSET()];
 
 	// CUSTOM CODE FOR BIGINT
-        if (fidx==4){ // function index for f1m_mul
-          uint32 offset, addr;
-          UINT* x, *y, *out;
-          offset=0;
-          addr = GET_OPERAND(uint32, 0);
-          //printf("%d ",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          out = (UINT*)maddr;
-          addr = GET_OPERAND(uint32, 2);
-          //printf("%d ",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          y = (UINT*)maddr;
-          addr = GET_OPERAND(uint32, 4);
-          //printf("%d\n",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          x = (UINT*)maddr;
-          frame_ip += 6;
-          FUNCNAME(montmul)(out,x,y,mod,modinv);
-          HANDLE_OP_END ();
-	}
-        else if (fidx==5){ // function index for f1m_add
-          uint32 offset, addr;
-          UINT* x, *y, *out;
-	  offset=0;
-          addr = GET_OPERAND(uint32, 0);
-	  //printf("%d ",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          out = (UINT*)maddr;
-          addr = GET_OPERAND(uint32, 2);
-	  //printf("%d ",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          y = (UINT*)maddr;
-          addr = GET_OPERAND(uint32, 4);
-	  //printf("%d\n",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          x = (UINT*)maddr;
-          frame_ip += 6;
-	  FUNCNAME(addmod)(out,x,y,mod);
-          HANDLE_OP_END ();
-	} 
-        else if (fidx==6){ // function index for f1m_sub
-          uint32 offset, addr;
-          UINT* x, *y, *out;
-	  offset=0;
-          addr = GET_OPERAND(uint32, 0);
-	  //printf("%d ",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          out = (UINT*)maddr;
-          addr = GET_OPERAND(uint32, 2);
-	  //printf("%d ",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          y = (UINT*)maddr;
-          addr = GET_OPERAND(uint32, 4);
-	  //printf("%d\n",addr);
-          CHECK_MEMORY_OVERFLOW(48);
-          x = (UINT*)maddr;
-          frame_ip += 6;
-	  FUNCNAME(subtractmod)(out,x,y,mod);
-          HANDLE_OP_END ();
-	}
-        else 
-        // END OF BIGINT CUSTOM CODE, BELOW IS THE REGULAR CASE
-	{
-          bh_assert(fidx < module->function_count);
-          cur_func = module->functions + fidx;
-          goto call_func_from_interp;
+        uint32 offset, addr;
+        UINT *x, *y, *out;
+	switch (fidx) {
+          case 4: // function index for f1m_mul
+            //printf("call f1m_mul\n");
+            offset=0;
+            addr = GET_OPERAND(uint32, 0);
+            //printf("%d ",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            out = (UINT*)maddr;
+            addr = GET_OPERAND(uint32, 2);
+            //printf("%d ",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            y = (UINT*)maddr;
+            addr = GET_OPERAND(uint32, 4);
+            //printf("%d\n",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            x = (UINT*)maddr;
+            frame_ip += 6;
+            FUNCNAME(montmul)(out,x,y,mod,modinv);
+            HANDLE_OP_END ();
+	    break;
+          case 5:	// function index for f1m_add
+            //printf("call f1m_add\n");
+            offset=0;
+            addr = GET_OPERAND(uint32, 0);
+            //printf("%d ",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            out = (UINT*)maddr;
+            addr = GET_OPERAND(uint32, 2);
+            //printf("%d ",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            y = (UINT*)maddr;
+            addr = GET_OPERAND(uint32, 4);
+            //printf("%d\n",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            x = (UINT*)maddr;
+            frame_ip += 6;
+            FUNCNAME(addmod)(out,x,y,mod);
+            HANDLE_OP_END ();
+	    break;
+          case 6:	// function index for f1m_sub
+            //printf("call f1m_sub\n");
+	    offset=0;
+            addr = GET_OPERAND(uint32, 0);
+	    //printf("%d ",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            out = (UINT*)maddr;
+            addr = GET_OPERAND(uint32, 2);
+	    //printf("%d ",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            y = (UINT*)maddr;
+            addr = GET_OPERAND(uint32, 4);
+	    //printf("%d\n",addr);
+            CHECK_MEMORY_OVERFLOW(48);
+            x = (UINT*)maddr;
+            frame_ip += 6;
+	    FUNCNAME(subtractmod)(out,x,y,mod);
+            HANDLE_OP_END ();
+	    break;
+          default:
+            // END OF BIGINT CUSTOM CODE, BELOW IS THE REGULAR CASE
+            bh_assert(fidx < module->function_count);
+            cur_func = module->functions + fidx;
+            goto call_func_from_interp;
 	}
 
 #if WASM_ENABLE_LABELS_AS_VALUES == 0
