@@ -891,6 +891,12 @@ wasm_interp_dump_op_count()
 static void **global_handle_table;
 #endif
 
+
+
+inline
+void addmod(uint64_t* const out, const uint64_t* const x, const uint64_t* const y){
+}
+
 static void
 wasm_interp_call_func_bytecode(WASMModuleInstance *module,
                                WASMExecEnv *exec_env,
@@ -2341,7 +2347,196 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
             CHECK_MEMORY_OVERFLOW(48);
             x = (UINT*)maddr;
             frame_ip += 6;
+#if 0    
             FUNCNAME(montmul)(out,x,y,mod,modinv);
+#else
+  uint64_t A[(384/64)*2+1];
+  for (int i=0;i<(384/64)*2+1;i++)
+    A[i]=0;
+
+  for (int i=0; i<(384/64); i++){
+    uint64_t ui = (A[i]+x[i]*y[0])*modinv;
+    uint64_t carry = 0;
+ 
+//#pragma unroll
+    //for (int j=0; j<(384/64); j++){
+    //  __uint128_t xiyj = (__uint128_t)x[i]*y[j];
+    //  __uint128_t uimj = (__uint128_t)ui*mod[j];
+    //  __uint128_t partial_sum = xiyj+carry;
+    //  __uint128_t sum = uimj+A[i+j]+partial_sum;
+    //  A[i+j] = (uint64_t)sum;
+    //  carry = sum>>64;
+    //  if (sum<partial_sum){
+    //    int k=2;
+    //    while ( i+j+k<(384/64)*2 && A[i+j+k]==(uint64_t)0-1 ){
+    //      A[i+j+k]=0;
+    //      k++;
+    //    }
+    //    if (i+j+k<(384/64)*2+1){
+    //      A[i+j+k]+=1;
+    //    }
+    //  }
+
+      //j=0
+      __uint128_t xiyj = (__uint128_t)x[i]*y[0];
+      __uint128_t uimj = (__uint128_t)ui*mod[0];
+      __uint128_t partial_sum = xiyj+carry;
+      __uint128_t sum = uimj+A[i+0]+partial_sum;
+      A[i+0] = (uint64_t)sum;
+      carry = sum>>64;
+
+      if (sum<partial_sum){
+        int k=2;
+        while ( i+0+k<(384/64)*2 && A[i+0+k]==(uint64_t)0-1 ){
+
+          A[i+0+k]=0;
+          k++;
+        }
+        if (i+0+k<(384/64)*2+1){
+          A[i+0+k]+=1;
+        }
+      }
+
+      //j=1
+      xiyj = (__uint128_t)x[i]*y[1];
+      uimj = (__uint128_t)ui*mod[1];
+      partial_sum = xiyj+carry;
+      sum = uimj+A[i+1]+partial_sum;
+      A[i+1] = (uint64_t)sum;
+      carry = sum>>64;
+
+      if (sum<partial_sum){
+        int k=2;
+        while ( i+1+k<(384/64)*2 && A[i+1+k]==(uint64_t)0-1 ){
+
+          A[i+1+k]=0;
+          k++;
+        }
+        if (i+1+k<(384/64)*2+1){
+          A[i+1+k]+=1;
+        }
+      }
+
+      //j=2
+      xiyj = (__uint128_t)x[i]*y[2];
+      uimj = (__uint128_t)ui*mod[2];
+      partial_sum = xiyj+carry;
+      sum = uimj+A[i+2]+partial_sum;
+      A[i+2] = (uint64_t)sum;
+      carry = sum>>64;
+
+      if (sum<partial_sum){
+        int k=2;
+        while ( i+2+k<(384/64)*2 && A[i+2+k]==(uint64_t)0-1 ){
+
+          A[i+2+k]=0;
+          k++;
+        }
+        if (i+2+k<(384/64)*2+1){
+          A[i+2+k]+=1;
+        }
+      }
+
+      //j=3
+      xiyj = (__uint128_t)x[i]*y[3];
+      uimj = (__uint128_t)ui*mod[3];
+      partial_sum = xiyj+carry;
+      sum = uimj+A[i+3]+partial_sum;
+      A[i+3] = (uint64_t)sum;
+      carry = sum>>64;
+
+      if (sum<partial_sum){
+        int k=2;
+        while ( i+3+k<(384/64)*2 && A[i+3+k]==(uint64_t)0-1 ){
+
+          A[i+3+k]=0;
+          k++;
+        }
+        if (i+3+k<(384/64)*2+1){
+          A[i+3+k]+=1;
+        }
+      }
+
+      //j=4
+      xiyj = (__uint128_t)x[i]*y[4];
+      uimj = (__uint128_t)ui*mod[4];
+      partial_sum = xiyj+carry;
+      sum = uimj+A[i+4]+partial_sum;
+      A[i+4] = (uint64_t)sum;
+      carry = sum>>64;
+
+      if (sum<partial_sum){
+        int k=2;
+        while ( i+4+k<(384/64)*2 && A[i+4+k]==(uint64_t)0-1 ){
+
+          A[i+4+k]=0;
+          k++;
+        }
+        if (i+4+k<(384/64)*2+1){
+          A[i+4+k]+=1;
+        }
+      }
+
+      //j=5
+      xiyj = (__uint128_t)x[i]*y[5];
+      uimj = (__uint128_t)ui*mod[5];
+      partial_sum = xiyj+carry;
+      sum = uimj+A[i+5]+partial_sum;
+      A[i+5] = (uint64_t)sum;
+      carry = sum>>64;
+
+      if (sum<partial_sum){
+        int k=2;
+        while ( i+5+k<(384/64)*2 && A[i+5+k]==(uint64_t)0-1 ){
+
+          A[i+5+k]=0;
+          k++;
+        }
+        if (i+5+k<(384/64)*2+1){
+          A[i+5+k]+=1;
+        }
+      }
+
+    //}
+    A[i+(384/64)]+=carry;
+  }
+
+
+  for (int i=0; i<(384/64);i++)
+    out[i] = A[i+(384/64)];
+
+  //if (A[(384/64)*2]>0 || less_than_or_equal384_64bitlimbs(mod,out))
+  //  subtract384_64bitlimbs(out, out, mod);
+
+  if (A[(384/64)*2]>0){
+    //subtract384_64bitlimbs(out, out, m);
+    uint64_t c=0;
+    for (int i=0; i<(384/64); i++){
+      uint64_t temp = out[i]-c;
+      c = (temp<mod[i] || out[i]<c) ? 1:0;
+      out[i] = temp-mod[i];
+    }
+  }
+  else{
+    //less_than_or_equal384_64bitlimbs(m,out)
+    uint64_t leq = 1;
+    for (int i=(384/64)-1;i>=0;i--){
+      if (mod[i]>out[i]){ leq = 0; break;}
+      else if (mod[i]<out[i]){ leq = 1; break;}
+    }
+    //  subtract384_64bitlimbs(out, out, m);
+    if (leq){
+      //subtract384_64bitlimbs(out, out, m);
+      uint64_t c=0;
+      for (int i=0; i<(384/64); i++){
+        uint64_t temp = out[i]-c;
+        c = (temp<mod[i] || out[i]<c) ? 1:0;
+        out[i] = temp-mod[i];
+      }
+    }
+  }
+#endif
+
             HANDLE_OP_END ();
 	    break;
           case 5:	// function index for f1m_add
@@ -2349,18 +2544,91 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
             offset=0;
             addr = GET_OPERAND(uint32, 0);
             //printf("%d ",addr);
-            CHECK_MEMORY_OVERFLOW(48);
+
+            //CHECK_MEMORY_OVERFLOW(48);
+            maddr = memory->memory_data + offset + addr;                             
+
             out = (UINT*)maddr;
             addr = GET_OPERAND(uint32, 2);
             //printf("%d ",addr);
-            CHECK_MEMORY_OVERFLOW(48);
+
+            //CHECK_MEMORY_OVERFLOW(48);
+            maddr = memory->memory_data + offset + addr;                             
+
             y = (UINT*)maddr;
             addr = GET_OPERAND(uint32, 4);
             //printf("%d\n",addr);
-            CHECK_MEMORY_OVERFLOW(48);
+	    
+            //CHECK_MEMORY_OVERFLOW(48);
+            maddr = memory->memory_data + offset + addr;                             
+
             x = (UINT*)maddr;
             frame_ip += 6;
+
+#if 1
             FUNCNAME(addmod)(out,x,y,mod);
+#else
+  uint64_t c=0;
+#pragma unroll
+  //for (int i=0; i<(384/64); i++){
+  //  uint64_t temp = x[i]+c;
+  //  out[i] = temp+y[i];
+  //  c = (temp<c || out[i]<temp) ? 1:0;
+  //}
+  //i=0
+    uint64_t temp = x[0]+c;
+    out[0] = temp+y[0];
+    c = (temp<c || out[0]<temp) ? 1:0;
+  //i=1
+    temp = x[1]+c;
+    out[1] = temp+y[1];
+    c = (temp<c || out[1]<temp) ? 1:0;
+  //i=2
+    temp = x[2]+c;
+    out[2] = temp+y[2];
+    c = (temp<c || out[2]<temp) ? 1:0;
+  //i=3
+    temp = x[3]+c;
+    out[3] = temp+y[3];
+    c = (temp<c || out[3]<temp) ? 1:0;
+  //i=4
+    temp = x[4]+c;
+    out[4] = temp+y[4];
+    c = (temp<c || out[4]<temp) ? 1:0;
+  //i=5
+    temp = x[5]+c;
+    out[5] = temp+y[5];
+    c = (temp<c || out[5]<temp) ? 1:0;
+
+  if (c){
+    //subtract384_64bitlimbs(out, out, m);
+    uint64_t c=0;
+    for (int i=0; i<(384/64); i++){
+      uint64_t temp = out[i]-c;
+      c = (temp<mod[i] || out[i]<c) ? 1:0;
+      out[i] = temp-mod[i];
+    }
+  }
+  else{
+    //less_than_or_equal384_64bitlimbs(m,out)
+    uint64_t leq = 1;
+    for (int i=(384/64)-1;i>=0;i--){
+      if (mod[i]>out[i]){ leq = 0; break;}
+      else if (mod[i]<out[i]){ leq = 1; break;}
+    }
+    //  subtract384_64bitlimbs(out, out, m);
+    if (leq){
+      //subtract384_64bitlimbs(out, out, m);
+      uint64_t c=0;
+      for (int i=0; i<(384/64); i++){
+        uint64_t temp = out[i]-c;
+        c = (temp<mod[i] || out[i]<c) ? 1:0;
+        out[i] = temp-mod[i];
+      }
+    }
+  }
+#endif
+
             HANDLE_OP_END ();
 	    break;
           case 6:	// function index for f1m_sub
@@ -2379,7 +2647,69 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
             CHECK_MEMORY_OVERFLOW(48);
             x = (UINT*)maddr;
             frame_ip += 6;
+#if 1
 	    FUNCNAME(subtractmod)(out,x,y,mod);
+#else
+  uint64_t c1 = 0;
+#pragma unroll
+  //for (int i=0; i<(384/64); i++){
+  //  uint64_t temp = x[i]-c1;
+  //  c1 = (temp<y[i] || x[i]<c1) ? 1:0;
+  //  out[i] = temp-y[i];
+  //}
+  //i=0
+    uint64_t temp1 = x[0]-c1;
+    c1 = (temp1<y[0] || x[0]<c1) ? 1:0;
+    out[0] = temp1-y[0];
+  //i=1
+    temp1 = x[1]-c1;
+    c1 = (temp1<y[1] || x[1]<c1) ? 1:0;
+    out[1] = temp1-y[1];
+  //i=2
+    temp1 = x[2]-c1;
+    c1 = (temp1<y[2] || x[2]<c1) ? 1:0;
+    out[2] = temp1-y[2];
+  //i=3
+    temp1 = x[3]-c1;
+    c1 = (temp1<y[3] || x[3]<c1) ? 1:0;
+    out[3] = temp1-y[3];
+  //i=4
+    temp1 = x[4]-c1;
+    c1 = (temp1<y[4] || x[4]<c1) ? 1:0;
+    out[4] = temp1-y[4];
+  //i=5
+    temp1 = x[5]-c1;
+    c1 = (temp1<y[5] || x[5]<c1) ? 1:0;
+    out[5] = temp1-y[5];
+
+
+  if (c1){
+    uint64_t zero[(384/64)];
+    for (int i=0;i<(384/64);i++)
+      zero[i]=0;
+
+    //subtract384_64bitlimbs(out, zero, out);
+  uint64_t c = 0;
+#pragma unroll
+  for (int i=0; i<(384/64); i++){
+    uint64_t temp = zero[i]-c;
+    c = (temp<out[i] || zero[i]<c) ? 1:0;
+    out[i] = temp-out[i];
+  }
+
+    //subtract384_64bitlimbs(out, m, out);
+  c = 0;
+#pragma unroll
+  for (int i=0; i<(384/64); i++){
+    uint64_t temp = mod[i]-c;
+    c = (temp<out[i] || mod[i]<c) ? 1:0;
+    out[i] = temp-out[i];
+  }
+
+  }
+#endif
+
+
             HANDLE_OP_END ();
 	    break;
           default:
