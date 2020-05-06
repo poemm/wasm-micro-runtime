@@ -2565,11 +2565,11 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
             x = (UINT*)maddr;
             frame_ip += 6;
 
-#if 1
+#if 0
             FUNCNAME(addmod)(out,x,y,mod);
 #else
   uint64_t c=0;
-#pragma unroll
+//#pragma unroll
   //for (int i=0; i<(384/64); i++){
   //  uint64_t temp = x[i]+c;
   //  out[i] = temp+y[i];
@@ -2651,7 +2651,7 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
 	    FUNCNAME(subtractmod)(out,x,y,mod);
 #else
   uint64_t c1 = 0;
-#pragma unroll
+//#pragma unroll
   //for (int i=0; i<(384/64); i++){
   //  uint64_t temp = x[i]-c1;
   //  c1 = (temp<y[i] || x[i]<c1) ? 1:0;
