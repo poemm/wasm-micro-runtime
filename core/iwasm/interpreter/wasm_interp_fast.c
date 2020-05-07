@@ -2347,8 +2347,114 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
             CHECK_MEMORY_OVERFLOW(48);
             x = (UINT*)maddr;
             frame_ip += 6;
-#if 0    
-            FUNCNAME(montmul)(out,x,y,mod,modinv);
+            //FUNCNAME(montmulCIOS)(out,x,y,mod,modinv);
+#if 1    
+  // CIOS method
+  UINT A[NUM_LIMBS+2];
+  for (int i=0;i<NUM_LIMBS+2;i++)
+    A[i]=0;
+  //#pragma unroll      // this unroll increases binary size by a lot
+  for (int i=0; i<NUM_LIMBS; i++){
+    //UINT ui = (A[i]+x[i]*y[0])*inv;
+    UINT carry = 0;
+    UINT2 sum = 0;
+    //#pragma unroll
+    //for (int j=0; j<NUM_LIMBS; j++){
+    //j=0
+      sum = (UINT2)A[0] + (UINT2)x[i]*y[0] + carry;
+      carry = sum>>LIMB_BITS;
+      A[0] = (UINT)sum;
+    //j=1
+      sum = (UINT2)A[1] + (UINT2)x[i]*y[1] + carry;
+      carry = sum>>LIMB_BITS;
+      A[1] = (UINT)sum;
+    //j=2
+      sum = (UINT2)A[2] + (UINT2)x[i]*y[2] + carry;
+      carry = sum>>LIMB_BITS;
+      A[2] = (UINT)sum;
+    //j=3
+      sum = (UINT2)A[3] + (UINT2)x[i]*y[3] + carry;
+      carry = sum>>LIMB_BITS;
+      A[3] = (UINT)sum;
+    //j=4
+      sum = (UINT2)A[4] + (UINT2)x[i]*y[4] + carry;
+      carry = sum>>LIMB_BITS;
+      A[4] = (UINT)sum;
+    //j=5
+      sum = (UINT2)A[5] + (UINT2)x[i]*y[5] + carry;
+      carry = sum>>LIMB_BITS;
+      A[5] = (UINT)sum;
+    //}
+    sum = (UINT2)(A[NUM_LIMBS]) + carry;
+    carry = sum>>LIMB_BITS;
+    A[NUM_LIMBS] = (UINT) sum;
+    A[NUM_LIMBS+1] = carry;
+    UINT A0inv = A[0]*modinv;
+    sum = (UINT2)(A[0]) + (UINT2)A0inv*mod[0];
+    carry = sum>>LIMB_BITS;
+    //#pragma unroll
+    //for (int j=1; j<NUM_LIMBS; j++){
+    //j=1
+      sum = (UINT2)(A[1]) + (UINT2)A0inv*mod[1] + carry;
+      carry = sum>>LIMB_BITS;
+      A[1-1] = (UINT)sum;
+    //j=2
+      sum = (UINT2)(A[2]) + (UINT2)A0inv*mod[2] + carry;
+      carry = sum>>LIMB_BITS;
+      A[2-1] = (UINT)sum;
+    //j=3
+      sum = (UINT2)(A[3]) + (UINT2)A0inv*mod[3] + carry;
+      carry = sum>>LIMB_BITS;
+      A[3-1] = (UINT)sum;
+    //j=4
+      sum = (UINT2)(A[4]) + (UINT2)A0inv*mod[4] + carry;
+      carry = sum>>LIMB_BITS;
+      A[4-1] = (UINT)sum;
+    //j=5
+      sum = (UINT2)(A[5]) + (UINT2)A0inv*mod[5] + carry;
+      carry = sum>>LIMB_BITS;
+      A[5-1] = (UINT)sum;
+    //}
+    sum = (UINT2)(A[NUM_LIMBS])+carry;
+    carry = sum>>LIMB_BITS;
+    A[NUM_LIMBS-1]=(UINT)sum;
+    A[NUM_LIMBS]=A[NUM_LIMBS+1]+carry;
+  }
+
+  // copy to out
+  for (int i=0; i<(384/64);i++)
+    out[i] = A[i];
+
+  //if (A[(384/64)*2]>0 || less_than_or_equal384_64bitlimbs(mod,out))
+  //  subtract384_64bitlimbs(out, out, mod);
+
+  if (A[(384/64)]>0){
+    //subtract384_64bitlimbs(out, out, m);
+    uint64_t c=0;
+    for (int i=0; i<(384/64); i++){
+      uint64_t temp = out[i]-c;
+      c = (temp<mod[i] || out[i]<c) ? 1:0;
+      out[i] = temp-mod[i];
+    }
+  }
+  else{
+    //less_than_or_equal384_64bitlimbs(m,out)
+    uint64_t leq = 1;
+    for (int i=(384/64)-1;i>=0;i--){
+      if (mod[i]>out[i]){ leq = 0; break;}
+      else if (mod[i]<out[i]){ leq = 1; break;}
+    }
+    //  subtract384_64bitlimbs(out, out, m);
+    if (leq){
+      //subtract384_64bitlimbs(out, out, m);
+      uint64_t c=0;
+      for (int i=0; i<(384/64); i++){
+        uint64_t temp = out[i]-c;
+        c = (temp<mod[i] || out[i]<c) ? 1:0;
+        out[i] = temp-mod[i];
+      }
+    }
+  }
 #else
   uint64_t A[(384/64)*2+1];
   for (int i=0;i<(384/64)*2+1;i++)
